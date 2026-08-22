@@ -16,7 +16,8 @@
   - 默认自动注入 `bpy`, `os`, `sys`, `math` 等核心库。
   - **全局变量持久化**：上一条命令定义的变量或函数，在后续请求中均可继续调用。
   - **REPL 表达式求值**：当末行为表达式（如 `bpy.context.object` 或 `bpy.data.scenes.keys()`）时，自动返回求值结果。
-- 📊 **全输出捕获与 Console 同步**：完整捕获 `stdout`、`stderr` 及返回值，支持在 N-Panel 开启 `Echo to Python Console` 实时镜像到内置 Console 窗口。
+- 📊 **完整输出捕获**：完整捕获 `stdout`、`stderr` 及返回值，实时返回给命令行终端。
+
 - 🎨 **精美 N-Panel 界面**：在 3D Viewport 侧边栏提供可视化状态展示、Host/Port 端口设置、Auth Token 校验及一键复制工具。
 
 ---
@@ -81,10 +82,12 @@ brc -s 8183 "print('Hello Session 8183')"
 | 区域 | 功能描述 |
 | :--- | :--- |
 | **Status (状态栏)** | 动态显示当前 HTTP 服务运行状态（Running 🟢 / Stopped ⏸️）及绑定端口。 |
-| **Server Settings** | 可配置 Host 绑定地址、Port 端口号、Auth Token 校验密钥、自动启动及 **Echo to Python Console** 开关。 |
+| **Server Settings** | 可配置 Host 绑定地址、Port 端口号、Auth Token 校验密钥及自动启动开关。 |
+
 | **curl Quick Commands** | **Copy Short Cmd** / **Copy Script Cmd**：一键复制 ready-to-use 的 `curl` 命令模板到剪贴板。 |
-| **Runtime Info** | 实时显示累积处理请求数、最后一次请求时间、执行状态（SUCCESS/ERROR）及代码摘要。 |
+| **Runtime Terminal (终端日志)** | **可滚动的终端日志视窗**，像命令行一样实时显示执行的代码（`>>>`）、标准输出及报错，配有一键复制和一键清空日志按钮。 |
 | **Reset Namespace** | 点击 **Reset Console Globals** 可一键重置 Python 上下文环境，清空之前创建的全局变量。 |
+
 
 ---
 

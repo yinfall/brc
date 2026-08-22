@@ -15,6 +15,23 @@ from . import operators
 from . import ui
 from .server import server_manager
 
+
+class RemoteConsoleLogItem(bpy.types.PropertyGroup):
+    """Property group representing a single terminal log line."""
+    text: bpy.props.StringProperty(name="Text", default="")
+    log_type: bpy.props.EnumProperty(
+        name="Type",
+        items=[
+            ('INPUT', "Input", "Command input", 'CONSOLE', 0),
+            ('OUTPUT', "Output", "Standard output", 'BLANK1', 1),
+            ('ERROR', "Error", "Error output", 'ERROR', 2),
+            ('INFO', "Info", "Info message", 'INFO', 3),
+        ],
+        default='OUTPUT'
+    )
+    timestamp: bpy.props.StringProperty(name="Time", default="")
+
+
 def auto_start_server():
     """Timer callback to auto-start server on load if enabled."""
     context = bpy.context
@@ -70,21 +87,34 @@ def register_properties(target):
         description="Automatically start HTTP server when Blender opens or addon loads",
         default=False
     )
-    target.remote_console_echo_console = bpy.props.BoolProperty(
-        name="Echo to Python Console",
-        description="Mirror executed remote commands and output into Blender's built-in Python Console window",
-        default=True
+    target.remote_console_logs = bpy.props.CollectionProperty(
+        type=RemoteConsoleLogItem,
+        name="Terminal Logs"
+    )
+    target.remote_console_active_log_index = bpy.props.IntProperty(
+        name="Active Log Index",
+        default=0
     )
 
 
 def unregister_properties(target):
-    for prop in ("remote_console_host", "remote_console_port", "remote_console_token", "remote_console_is_running", "remote_console_auto_start", "remote_console_echo_console"):
+    for prop in (
+        "remote_console_host",
+        "remote_console_port",
+        "remote_console_token",
+        "remote_console_is_running",
+        "remote_console_auto_start",
+        "remote_console_logs",
+        "remote_console_active_log_index",
+    ):
         if hasattr(target, prop):
             delattr(target, prop)
 
 
-
 def register():
+    # Register PropertyGroup first
+    bpy.utils.register_class(RemoteConsoleLogItem)
+
     # Register properties on Scene AND WindowManager for maximum stability
     register_properties(bpy.types.Scene)
     register_properties(bpy.types.WindowManager)
@@ -109,6 +139,9 @@ def unregister():
     # Del properties
     unregister_properties(bpy.types.Scene)
     unregister_properties(bpy.types.WindowManager)
+
+    # Unregister PropertyGroup
+    bpy.utils.unregister_class(RemoteConsoleLogItem)
 
 
 if __name__ == "__main__":

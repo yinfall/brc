@@ -6,35 +6,6 @@ import math
 import os
 import bpy
 
-def echo_to_blender_console(text: str, is_input: bool = False):
-    """
-    Appends text to Blender's built-in Python Console space if open.
-    """
-    if not text:
-        return
-
-    try:
-        wm = bpy.context.window_manager
-        if not wm:
-            return
-
-        for window in wm.windows:
-            screen = window.screen
-            for area in screen.areas:
-                if area.type == 'CONSOLE':
-                    for space in area.spaces:
-                        if space.type == 'CONSOLE':
-                            line_type = 'INPUT' if is_input else 'OUTPUT'
-                            for line in text.splitlines():
-                                # Override context to trigger operator in console area
-                                with bpy.context.temp_override(window=window, area=area, space_data=space):
-                                    bpy.ops.console.scrollback_append(text=line, type=line_type)
-                            return
-    except Exception:
-        # Fallback gracefully if context override fails or console is not active
-        pass
-
-
 class PythonExecutor:
     """
     Executes Python code strings safely within the Blender environment.
@@ -58,16 +29,20 @@ class PythonExecutor:
             'math': math,
         }
 
-    def execute(self, code: str, echo: bool = True) -> dict:
+    def execute(self, code: str) -> dict:
         """
         Executes code string and returns execution results.
 
         Args:
             code: Python code string to execute
-            echo: If True, echoes code and results to Blender's built-in Python Console
 
         Returns:
-            dict containing execution results
+            dict containing execution results:
+                - success (bool)
+                - stdout (str)
+                - stderr (str)
+                - result_repr (str or None)
+                - output (str combined output)
         """
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()
@@ -79,15 +54,6 @@ class PythonExecutor:
         res_val = None
 
         clean_code = code.strip()
-
-        # Echo input code snippet to Blender Python Console
-        if echo and clean_code:
-            lines = clean_code.splitlines()
-            if len(lines) > 5:
-                echo_head = f"[Remote Code ({len(lines)} lines)]: " + lines[0] + " ..."
-            else:
-                echo_head = f"[Remote]: " + clean_code
-            echo_to_blender_console(echo_head, is_input=True)
 
         try:
             sys.stdout = stdout_capture
@@ -136,10 +102,6 @@ class PythonExecutor:
             output_parts.append(repr(res_val) + "\n")
 
         full_output = "".join(output_parts)
-
-        # Echo output results to Blender Python Console
-        if echo and full_output.strip():
-            echo_to_blender_console(full_output.strip(), is_input=False)
 
         return {
             "success": success,

@@ -112,11 +112,59 @@ class REMOTE_CONSOLE_OT_copy_curl_cmd(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class REMOTE_CONSOLE_OT_clear_logs(bpy.types.Operator):
+    """Clear all terminal execution logs"""
+    bl_idname = "wm.remote_console_clear_logs"
+    bl_label = "Clear Terminal Logs"
+    bl_description = "Clear all terminal execution logs and history"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        wm = getattr(context, "window_manager", None)
+        scene = getattr(context, "scene", None)
+        for target in (wm, scene):
+            if target and hasattr(target, "remote_console_logs"):
+                target.remote_console_logs.clear()
+                target.remote_console_active_log_index = 0
+        self.report({'INFO'}, "Terminal logs cleared.")
+        return {'FINISHED'}
+
+
+class REMOTE_CONSOLE_OT_copy_logs(bpy.types.Operator):
+    """Copy all terminal logs to clipboard"""
+    bl_idname = "wm.remote_console_copy_logs"
+    bl_label = "Copy Terminal Logs"
+    bl_description = "Copy all terminal output lines to your clipboard"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        wm = getattr(context, "window_manager", None)
+        scene = getattr(context, "scene", None)
+        logs = None
+        if wm and hasattr(wm, "remote_console_logs") and len(wm.remote_console_logs) > 0:
+            logs = wm.remote_console_logs
+        elif scene and hasattr(scene, "remote_console_logs") and len(scene.remote_console_logs) > 0:
+            logs = scene.remote_console_logs
+
+        if not logs:
+            self.report({'WARNING'}, "Terminal log is empty.")
+            return {'CANCELLED'}
+
+        lines = [item.text for item in logs]
+        full_text = "\n".join(lines)
+        context.window_manager.clipboard = full_text
+        self.report({'INFO'}, f"Copied {len(lines)} log lines to clipboard.")
+        return {'FINISHED'}
+
+
+
 classes = (
     REMOTE_CONSOLE_OT_start_server,
     REMOTE_CONSOLE_OT_stop_server,
     REMOTE_CONSOLE_OT_reset_globals,
     REMOTE_CONSOLE_OT_copy_curl_cmd,
+    REMOTE_CONSOLE_OT_clear_logs,
+    REMOTE_CONSOLE_OT_copy_logs,
 )
 
 def register():

@@ -24,12 +24,9 @@ while ($i -lt $args.Count) {
     }
     $i++
 }
-# Debug
-# Write-Host "DEBUG: targetSessionVal='$targetSessionVal', codeArgs='$($codeArgs -join ' ')', argsCount=$($args.Count)"
-
-
 
 # Port Scanner Helper (analogous to adb devices)
+
 function Get-BlenderSessions {
     param([int[]]$ScanPorts = (8180..8195))
     $activeList = [System.Collections.Generic.List[string]]::new()

@@ -222,6 +222,73 @@ class RemoteConsoleServerManager:
             return False, f"Error stopping server: {str(e)}"
 
 
+def append_terminal_log(code: str, result: dict):
+    """Appends executed command and output to the terminal log collection."""
+    try:
+        context = bpy.context
+        wm = getattr(context, "window_manager", None)
+        scene = getattr(context, "scene", None)
+        
+        targets = []
+        if wm and hasattr(wm, "remote_console_logs"):
+            targets.append(wm)
+        if scene and hasattr(scene, "remote_console_logs") and scene is not wm:
+            targets.append(scene)
+
+        if not targets:
+            return
+
+        current_time = time.strftime("%H:%M:%S")
+        clean_code = code.strip()
+        lines = clean_code.splitlines() if clean_code else []
+        stdout_text = result.get("stdout", "")
+        res_repr = result.get("result_repr")
+        stderr_text = result.get("stderr", "")
+
+        for target in targets:
+            logs = target.remote_console_logs
+
+            # 1. Add input command lines
+            for idx, line in enumerate(lines):
+                item = logs.add()
+                item.timestamp = current_time if idx == 0 else ""
+                item.log_type = 'INPUT'
+                item.text = f">>> {line}" if idx == 0 else f"... {line}"
+
+            # 2. Add stdout lines
+            if stdout_text:
+                for line in stdout_text.rstrip("\n").splitlines():
+                    item = logs.add()
+                    item.timestamp = ""
+                    item.log_type = 'OUTPUT'
+                    item.text = f"    {line}"
+
+            # 3. Add expression return value
+            if res_repr is not None:
+                item = logs.add()
+                item.timestamp = ""
+                item.log_type = 'OUTPUT'
+                item.text = f" => {res_repr}"
+
+            # 4. Add error traceback lines
+            if stderr_text:
+                for line in stderr_text.rstrip("\n").splitlines():
+                    item = logs.add()
+                    item.timestamp = ""
+                    item.log_type = 'ERROR'
+                    item.text = f" !  {line}"
+
+            # Limit total log lines (max 200)
+            max_logs = 200
+            while len(logs) > max_logs:
+                logs.remove(0)
+
+            target.remote_console_active_log_index = max(0, len(logs) - 1)
+    except Exception as e:
+        print(f"[Remote Console] Error updating terminal log: {e}")
+
+
+
 def process_queue_timer():
     """Blender main thread timer function to execute queued python requests."""
     while not REQUEST_QUEUE.empty():
@@ -231,20 +298,13 @@ def process_queue_timer():
             event = req['event']
             response_holder = req['response']
 
-            # Query Echo to Python Console setting
-            context = bpy.context
-            scene = getattr(context, "scene", None)
-            wm = getattr(context, "window_manager", None)
-            echo = True
-            if scene and hasattr(scene, "remote_console_echo_console"):
-                echo = scene.remote_console_echo_console
-            elif wm and hasattr(wm, "remote_console_echo_console"):
-                echo = wm.remote_console_echo_console
-
             # Execute code inside Blender main thread
-            res = executor.execute(code, echo=echo)
+            res = executor.execute(code)
             response_holder['result'] = res
             event.set()
+
+            # Append to terminal log UI
+            append_terminal_log(code, res)
         except queue.Empty:
             break
         except Exception as e:
@@ -254,6 +314,6 @@ def process_queue_timer():
     return 0.05
 
 
-
 # Global singleton manager instance
 server_manager = RemoteConsoleServerManager()
+

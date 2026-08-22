@@ -1,6 +1,30 @@
 import bpy
 from .server import server_manager
 
+
+class REMOTE_CONSOLE_UL_log_list(bpy.types.UIList):
+    """UIList for scrollable terminal output logs."""
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            row = layout.row(align=True)
+
+            # Choose icon based on log type
+            if item.log_type == 'INPUT':
+                row.label(text=item.text, icon='CONSOLE')
+            elif item.log_type == 'ERROR':
+                row.label(text=item.text, icon='ERROR')
+            elif item.log_type == 'INFO':
+                row.label(text=item.text, icon='INFO')
+            else:
+                row.label(text=item.text, icon='BLANK1')
+
+            # Show timestamp on the right if present
+            if item.timestamp:
+                sub = row.row()
+                sub.alignment = 'RIGHT'
+                sub.label(text=item.timestamp)
+
+
 class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
     """Main Panel in 3D Viewport Sidebar (N-Panel)"""
     bl_label = "Remote Console Server"
@@ -45,7 +69,6 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
                 row.label(text="Status: Stopped", icon='PAUSE')
                 row.operator("wm.remote_console_start_server", text="Start Server", icon='PLAY')
 
-
             # --- Network Configuration ---
             config_box = layout.box()
             config_box.label(text="Server Settings", icon='PREFERENCES')
@@ -57,8 +80,6 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
             col.prop(target, "remote_console_token", text="Auth Token")
 
             config_box.prop(target, "remote_console_auto_start", text="Auto Start on Load")
-            config_box.prop(target, "remote_console_echo_console", text="Echo to Python Console")
-
 
             # --- Quick Usage Examples ---
             usage_box = layout.box()
@@ -85,16 +106,34 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
             col_hint.label(text="Script File Example:")
             col_hint.label(text=f'curl -X POST http://{host}:{port}{token_hdr} --data-binary @script.py')
 
-            # --- Execution Stats & Tools ---
+            # --- Runtime Info & Scrollable Terminal Output ---
             stats_box = layout.box()
-            stats_box.label(text="Runtime Info", icon='INFO')
-            col_stats = stats_box.column(align=True)
-            col_stats.scale_y = 0.85
-            col_stats.label(text=f"Total Requests: {server_manager.total_requests}")
-            col_stats.label(text=f"Last Req Time: {server_manager.last_time}")
-            col_stats.label(text=f"Last Status: {server_manager.last_status}")
-            if server_manager.last_code:
-                col_stats.label(text=f"Last Code: {server_manager.last_code}")
+            
+            # Header with clear and copy buttons
+            row_stats_hdr = stats_box.row(align=True)
+            row_stats_hdr.label(text="Runtime Terminal", icon='CONSOLE')
+            row_stats_hdr.operator("wm.remote_console_copy_logs", text="", icon='COPYDOWN')
+            row_stats_hdr.operator("wm.remote_console_clear_logs", text="", icon='TRASH')
+
+            # Stats row
+            row_info = stats_box.row(align=True)
+            row_info.scale_y = 0.85
+            row_info.label(text=f"Total: {server_manager.total_requests}")
+            row_info.label(text=f"Last: {server_manager.last_time}")
+            row_info.label(text=f"Status: {server_manager.last_status}")
+
+            # Scrollable terminal UIList (always rendered as interactive terminal box)
+            stats_box.template_list(
+                "REMOTE_CONSOLE_UL_log_list",
+                "",
+                target,
+                "remote_console_logs",
+                target,
+                "remote_console_active_log_index",
+                rows=7,
+                maxrows=12
+            )
+
 
             stats_box.separator()
             stats_box.operator("wm.remote_console_reset_globals", text="Reset Namespace", icon='FILE_REFRESH')
@@ -106,6 +145,7 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
 
 
 classes = (
+    REMOTE_CONSOLE_UL_log_list,
     REMOTE_CONSOLE_PT_main,
 )
 
