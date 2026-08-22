@@ -13,7 +13,7 @@ bl_info = {
 import bpy
 from . import operators
 from . import ui
-from .server import server_manager
+from .client import client_manager
 
 
 class RemoteConsoleLogItem(bpy.types.PropertyGroup):
@@ -32,60 +32,37 @@ class RemoteConsoleLogItem(bpy.types.PropertyGroup):
     timestamp: bpy.props.StringProperty(name="Time", default="")
 
 
-def auto_start_server():
-    """Timer callback to auto-start server on load if enabled."""
-    context = bpy.context
-    scene = getattr(context, "scene", None)
-    wm = getattr(context, "window_manager", None)
+def auto_start_client():
+    """Timer callback to auto-start client on load and keep it connected."""
+    if not client_manager.is_running:
+        success, msg = client_manager.start()
+        
+        context = bpy.context
+        scene = getattr(context, "scene", None)
+        wm = getattr(context, "window_manager", None)
+        
+        if scene and hasattr(scene, "remote_console_is_running"):
+            scene.remote_console_is_running = success
+            if hasattr(scene, "remote_console_error_msg"):
+                scene.remote_console_error_msg = "" if success else msg
+        if wm and hasattr(wm, "remote_console_is_running"):
+            wm.remote_console_is_running = success
+            if hasattr(wm, "remote_console_error_msg"):
+                wm.remote_console_error_msg = "" if success else msg
     
-    auto_start = False
-    if scene and hasattr(scene, "remote_console_auto_start"):
-        auto_start = scene.remote_console_auto_start
-    elif wm and hasattr(wm, "remote_console_auto_start"):
-        auto_start = wm.remote_console_auto_start
-
-    if auto_start and not server_manager.is_running:
-        host = getattr(scene, "remote_console_host", "127.0.0.1")
-        port = getattr(scene, "remote_console_port", 8182)
-        token = getattr(scene, "remote_console_token", "")
-        success, msg = server_manager.start(host, port, token)
-        if success:
-            if scene and hasattr(scene, "remote_console_is_running"):
-                scene.remote_console_is_running = True
-            if wm and hasattr(wm, "remote_console_is_running"):
-                wm.remote_console_is_running = True
-            print(f"[Remote Console] {msg}")
-    return None  # Run once
+    return 2.0  # Retry/Check every 2 seconds
 
 
 def register_properties(target):
-    target.remote_console_host = bpy.props.StringProperty(
-        name="Host",
-        description="IP Address to bind the HTTP server",
-        default="127.0.0.1"
-    )
-    target.remote_console_port = bpy.props.IntProperty(
-        name="Port",
-        description="Port number for the HTTP server",
-        default=8182,
-        min=1024,
-        max=65535
-    )
-    target.remote_console_token = bpy.props.StringProperty(
-        name="Auth Token",
-        description="Optional security token required in X-Auth-Token header or ?token= param",
-        default="",
-        subtype='PASSWORD'
-    )
     target.remote_console_is_running = bpy.props.BoolProperty(
         name="Is Running",
         description="Current server running status",
         default=False
     )
-    target.remote_console_auto_start = bpy.props.BoolProperty(
-        name="Auto Start",
-        description="Automatically start HTTP server when Blender opens or addon loads",
-        default=False
+    target.remote_console_error_msg = bpy.props.StringProperty(
+        name="Error Message",
+        description="Error message if daemon connection fails",
+        default=""
     )
     target.remote_console_logs = bpy.props.CollectionProperty(
         type=RemoteConsoleLogItem,
@@ -99,11 +76,8 @@ def register_properties(target):
 
 def unregister_properties(target):
     for prop in (
-        "remote_console_host",
-        "remote_console_port",
-        "remote_console_token",
         "remote_console_is_running",
-        "remote_console_auto_start",
+        "remote_console_error_msg",
         "remote_console_logs",
         "remote_console_active_log_index",
     ):
@@ -123,14 +97,14 @@ def register():
     operators.register()
     ui.register()
 
-    # Register auto-start timer (runs 1 sec after addon register)
-    bpy.app.timers.register(auto_start_server, first_interval=1.0)
+    # Register auto-start timer (runs 1 sec after addon register, persistent across file loads)
+    bpy.app.timers.register(auto_start_client, first_interval=1.0, persistent=True)
 
 
 def unregister():
-    # Stop server if currently running
-    if server_manager.is_running:
-        server_manager.stop()
+    # Stop client if currently running
+    if client_manager.is_running:
+        client_manager.stop()
 
     # Unregister Operators and UI Panels
     ui.unregister()
