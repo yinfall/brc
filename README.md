@@ -1,30 +1,27 @@
 # Blender Remote Console
 
-**Blender Remote Console** 是一款专门为 Blender 4.x 开发的高效远程 Python 代码执行插件。该项目采用了类似 `adb` 的守护进程 (Daemon) 架构。
-
-项目内置了用 Go 语言编写的极简命令行工具 **`brc`**（位于 `cli/` 目录下），你可以使用 `brc` 轻松发送**简短 Python 命令**或**传输完整的 `.py` 脚本文件**，代码完全在 Blender 内部主线程环境运行，并**实时返回完整的输出信息**（包含 `print()` 打印内容、错误异常 Traceback 及表达式返回值）。
+**Blender Remote Console (BRC)** 是一款专为 Blender 4.x / 5.x 设计的远程 Python 代码执行工具。它采用了类似于 Android `adb` 的守护进程架构，让你可以随时在外部命令行、脚本或自动化流水线中向正在运行的 Blender 发送指令并实时获取完整的返回输出。
 
 ---
 
-## 🌟 核心优势
+## 🌟 核心特性
 
-- 🚀 **`brc` CLI 工具与守护进程架构（类 `adb` 体验）**：
-  - **永远自动保活重连**：插件启动后会自动寻找并连接后台守护进程 (`127.0.0.1:8082`)，中途断开会自动重连，如果守护进程未启动还会自动尝试静默拉起。
-  - **`brc sessions`**：参照 `adb devices`，快速发现并列出本机所有活跃的 Blender 会话 (PID)。
-  - **精确会话投递**：使用 `brc -s <pid> exec <code>` 精准将代码投递给指定的 Blender 进程。
-- 🔒 **主线程安全执行**：通过 Blender `bpy.app.timers` 调度队列，所有远程 Python 代码均 100% 在 Blender 主线程中安全运行，避免非主线程调用 `bpy.ops` 导致的崩溃。
-- 🐍 **Console 级上下文**：
-  - 默认自动注入 `bpy`, `os`, `sys`, `math` 等核心库。
-  - **全局变量持久化**：上一条命令定义的变量或函数，在后续请求中均可继续调用。
-  - **REPL 表达式求值**：当末行为表达式（如 `bpy.context.object` 或 `bpy.data.scenes.keys()`）时，自动返回求值结果。
-- 📊 **完整输出捕获**：完整捕获 `stdout`、`stderr` 及返回值，实时返回给命令行终端。
-- 🎨 **精美 N-Panel 界面**：在 3D Viewport 侧边栏提供可视化状态展示、快捷命令复制以及执行日志滚动查看面板。
+- 🚀 **极简类 `adb` 交互**：
+  - **`brc sessions`**：一键发现并列出本机所有活跃的 Blender 会话及其进程 PID。
+  - **`brc exec <代码|文件>`**：单会话自动识别，多会话通过 `-s <PID>` 精准路由。
+- 🔄 **零配置自动保活**：Blender 插件在后台始终自动寻找并连接守护进程，中途守护进程断开或未启动会自动静默拉起。
+- 🔒 **100% 主线程安全**：所有远程 Python 代码均通过 Blender 主线程调度队列执行，杜绝非主线程调用 `bpy.ops` 引发的软件崩溃。
+- 🐍 **完整的交互式 Console 体验**：
+  - 支持 **全局变量持久化**（上一条命令定义的变量、类、函数在后续调用中依然有效）。
+  - 支持 **REPL 表达式求值**（例如输入 `bpy.data.objects.keys()` 即可直接回传返回值）。
+  - 完整捕获 `stdout` 打印、`stderr` 报错堆栈及返回值。
+- 🎨 **可视化 N-Panel 侧边栏**：3D Viewport 侧边栏提供实时连接状态、一键命令复制与可滚动的终端执行日志。
 
 ---
 
 ## 📦 一键安装 (One-Line Install)
 
-发布后，用户可以通过以下一行命令自动安装 `brc` CLI 与 Blender 插件：
+选择你的操作系统，在终端运行以下一行命令即可自动完成 `brc` CLI 与 Blender 插件的安装与环境配置：
 
 ### Windows (PowerShell)
 ```powershell
@@ -36,13 +33,15 @@ irm https://raw.githubusercontent.com/yinfall/blender-remote-console/main/script
 curl -fsSL https://raw.githubusercontent.com/yinfall/blender-remote-console/main/scripts/install.sh | bash
 ```
 
+> **手动安装**：如果无法使用脚本，也可以直接在 [Releases](https://github.com/yinfall/blender-remote-console/releases) 页面下载对应系统的 `brc` 可执行文件放到 `PATH` 中，并将 `blender-remote-console.zip` 插件安装到 Blender。
+
 ---
 
-## ⚡ 命令行工具 `brc` 使用指南
+## ⚡ 快速上手指南
 
-安装后确保 `brc` 位于环境变量 `PATH` 中：
+安装完成后，打开 Blender 并在 **Edit -> Preferences -> Add-ons** 中启用 **Blender Remote Console** 插件。
 
-### 1. 查看已连接的 Blender 会话 (`brc sessions`)
+### 1. 查看活跃的 Blender 会话 (`brc sessions`)
 ```bash
 brc sessions
 ```
@@ -62,54 +61,48 @@ brc exec "print(bpy.context.scene.name)"
 Scene
 ```
 
-### 3. 传输并执行 `.py` 脚本文件
-直接将文件路径传给 `brc exec` 即可：
+### 3. 获取表达式返回值
 ```bash
-brc exec my_script.py
+brc exec "bpy.data.objects.keys()"
+```
+**输出：**
+```text
+['Camera', 'Cube', 'Light']
 ```
 
-### 4. 多会话选择 (`-s` / `--session`)
-当本机开启了多个 Blender 窗口时，需要通过 PID 指定特定的进程：
+### 4. 传输并执行 `.py` 脚本文件
 ```bash
-brc -s 12345 exec "print('Hello Session 12345')"
+brc exec path/to/my_script.py
+```
+
+### 5. 多会话指定目标 (`-s` / `--session`)
+当本机同时打开了多个 Blender 窗口时，可通过 `-s <PID>` 将指令发送给特定的实例：
+```bash
+brc -s 12345 exec "bpy.ops.mesh.primitive_cube_add()"
 ```
 
 ---
 
-## 🖥️ N-Panel 侧边栏功能说明
+## 🖥️ Blender 界面功能 (N-Panel)
 
-| 区域 | 功能描述 |
+在 3D Viewport 视图中按下 **`N`** 键展开侧边栏，点击 **Remote Console** 选项卡：
+
+| 面板区域 | 功能说明 |
 | :--- | :--- |
-| **Status (状态栏)** | 动态显示当前连接状态及本进程 PID。异常时下方会展示红色错误提示框。 |
-| **brc Quick Commands** | **Copy Short Cmd** / **Copy Script Cmd**：一键复制包含了当前 PID 的 `brc` 命令模板到剪贴板。 |
-| **Runtime Terminal (终端日志)** | **可滚动的终端日志视窗**，像命令行一样实时显示执行的代码（`>>>`）、标准输出及报错，配有一键复制和一键清空日志按钮。 |
-| **Reset Namespace** | 点击 **Reset Console Globals** 可一键重置 Python 上下文环境，清空之前创建的全局变量。 |
+| **Status (状态栏)** | 动态显示连接状态与当前进程 PID。异常时展示直观的错误提示。 |
+| **brc Quick Commands** | **Copy Short Cmd** / **Copy Script Cmd**：一键复制携带当前 PID 的命令行示例到剪贴板。 |
+| **Runtime Terminal (执行日志)** | 实时显示外部执行的代码（`>>>`）、标准输出及报错异常，配有一键清空和一键复制日志按钮。 |
+| **Reset Namespace** | 点击 **Reset Console Globals** 可一键重置 Python 上下文环境，清空之前定义的临时变量。 |
 
 ---
 
-## 📁 项目源码结构
+## 📚 开发者文档
 
-```
-blender-remote-console/
-├── blender-addon/             # 【Blender 插件目录】
-│   ├── __init__.py            # 插件入口与持久化保活定时器
-│   ├── client.py              # 守护进程客户端，维持 TCP 长连接与主线程调度
-│   ├── executor.py            # Python 代码执行器（REPL 表达式求值与 stdout/stderr 捕获）
-│   ├── operators.py           # Blender Operators（重置命名空间、复制命令等）
-│   └── ui.py                  # 3D Viewport 侧边栏 (N-Panel) 界面定义
-│
-├── cli/                       # 【CLI 与 Daemon 核心源码 (Go)】
-│   ├── main.go                # Daemon 后台服务与 brc CLI 实现
-│   └── go.mod
-│
-├── scripts/                   # 【安装与部署脚本】
-│   ├── install.ps1            # Windows 一键安装脚本
-│   └── install.sh             # Linux/macOS 一键安装脚本
-│
-├── .github/
-│   └── workflows/
-│       └── release.yml        # GitHub Actions 自动交叉编译与发版
-│
-├── .gitignore
-└── README.md
-```
+如果你想了解底层协议设计、本地开发调试流程或参与贡献，请参考：
+* [开发者与架构设计文档 (docs/development.md)](docs/development.md)
+
+---
+
+## 📄 开源许可
+
+本项目基于 MIT License 开源。
