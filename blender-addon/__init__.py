@@ -20,8 +20,8 @@ from .client import client_manager
 
 class RemoteConsoleLogItem(bpy.types.PropertyGroup):
     """Property group representing a single terminal log line."""
-    text: bpy.props.StringProperty(name="Text", default="")
-    log_type: bpy.props.EnumProperty(
+    text: str = bpy.props.StringProperty(name="Text", default="")
+    log_type: str = bpy.props.EnumProperty(
         name="Type",
         items=[
             ('INPUT', "Input", "Command input", 'CONSOLE', 0),
@@ -31,7 +31,7 @@ class RemoteConsoleLogItem(bpy.types.PropertyGroup):
         ],
         default='OUTPUT'
     )
-    timestamp: bpy.props.StringProperty(name="Time", default="")
+    timestamp: str = bpy.props.StringProperty(name="Time", default="")
 
 
 def auto_start_client():
