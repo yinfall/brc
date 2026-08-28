@@ -21,7 +21,7 @@
 
 ## 📦 一键安装 (One-Line Install)
 
-选择你的操作系统，在终端运行以下一行命令即可自动完成 `brc` CLI 的安装，并调用 `brc install-addon` 自动配置 Blender 插件：
+选择你的操作系统，在终端运行以下一行命令即可自动完成 `brc` CLI 的安装：
 
 ### Windows (PowerShell)
 ```powershell
@@ -34,16 +34,20 @@ curl -fsSL https://raw.githubusercontent.com/yinfall/blender-remote-console/main
 ```
 
 > **手动安装 / 离线安装**：
-> 1. 在 [Releases](https://github.com/yinfall/blender-remote-console/releases) 页面下载对应系统的 `brc` 可执行文件并加入系统 `PATH`。
-> 2. 运行 `brc install-addon` 即可交互式列出本机所有 Blender 版本并勾选安装；也可以下载 `blender-remote-console.zip` 后运行 `brc install-addon --zip /path/to/blender-remote-console.zip`。
+> 在 [Releases](https://github.com/yinfall/blender-remote-console/releases) 页面下载对应系统的 `brc` 可执行文件加入 `PATH`，以及 `blender-remote-console.zip` 放入 `~/.brc/` 即可。
 
 ---
 
 ## ⚡ 快速上手指南
 
-安装完成后，打开 Blender 并在 **Edit -> Preferences -> Add-ons** 中启用 **Blender Remote Console** 插件（或使用 `brc doctor` 检查安装状态）。
+### 1. 配置 Blender 插件 (`brc install-addon`)
+安装完成后，在终端运行 `brc install-addon`，即可交互式选择要安装的 Blender 版本：
+```bash
+brc install-addon
+```
+安装后在 Blender 中打开 **Edit -> Preferences -> Add-ons** 启用 **Blender Remote Console**。
 
-### 1. 环境与连接自检 (`brc doctor`)
+### 2. 环境与连接自检 (`brc doctor`)
 ```bash
 brc doctor
 ```

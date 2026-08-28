@@ -51,15 +51,20 @@ if ($UserPath -notlike "*$InstallDir*") {
     $env:PATH = "$env:PATH;$InstallDir"
 }
 
-# 4. Run brc install-addon to detect and install Blender Addon
-Write-Host ">>> Configuring Blender addon..." -ForegroundColor Cyan
-try {
-    & "$ExeTarget" install-addon --all
-} catch {
-    Write-Host "    [Warning] Could not run 'brc install-addon' automatically. Run 'brc install-addon' manually after installation." -ForegroundColor Yellow
-}
-
 Write-Host ""
-Write-Host "✓ Installation completed successfully!" -ForegroundColor Green
-Write-Host "1. Restart your terminal to use 'brc'"
-Write-Host "2. Open Blender -> Edit -> Preferences -> Add-ons, and enable 'Blender Remote Console'"
+Write-Host "🎉 brc CLI installed successfully to $ExeTarget" -ForegroundColor Green
+Write-Host ""
+
+# 4. Prompt user whether to run brc install-addon now
+$Prompt = "👉 Would you like to run 'brc install-addon' to configure Blender now? [Y/n]: "
+$Response = Read-Host -Prompt $Prompt
+
+if ([string]::IsNullOrWhiteSpace($Response) -or $Response -match '^[Yy]$') {
+    Write-Host ""
+    & "$ExeTarget" install-addon
+} else {
+    Write-Host ""
+    Write-Host "You can run 'brc install-addon' anytime later to configure your Blender versions." -ForegroundColor Cyan
+    Write-Host "1. Restart your terminal (or run: `$env:Path = [System.Environment]::GetEnvironmentVariable('Path','User'))"
+    Write-Host "2. Run: brc install-addon" -ForegroundColor Yellow
+}

@@ -43,11 +43,40 @@ chmod +x "$INSTALL_DIR/brc"
 echo ">>> Downloading Blender addon package..."
 curl -fsSL "$ZIP_URL" -o "$BRC_HOME/blender-remote-console.zip"
 
-echo ">>> Configuring Blender addon..."
-"$INSTALL_DIR/brc" install-addon --all
-
 echo ""
-echo "✓ Installation complete!"
-echo "1. Add '$INSTALL_DIR' to your PATH in ~/.bashrc or ~/.zshrc if not already present:"
-echo "   export PATH=\"\$HOME/.brc/bin:\$PATH\""
-echo "2. Open Blender -> Edit -> Preferences -> Add-ons, and enable 'Blender Remote Console'"
+echo "🎉 brc CLI installed successfully to $INSTALL_DIR/brc"
+echo ""
+
+# Check if PATH contains ~/.brc/bin, if not print advice
+case ":$PATH:" in
+    *":$INSTALL_DIR:"*) ;;
+    *)
+        echo "💡 Note: Add '$INSTALL_DIR' to your PATH in ~/.bashrc or ~/.zshrc to use 'brc' anywhere:"
+        echo "   export PATH=\"\$HOME/.brc/bin:\$PATH\""
+        echo ""
+        ;;
+esac
+
+# Prompt whether to run brc install-addon now
+USER_INPUT=""
+PROMPT="👉 Would you like to run 'brc install-addon' to configure Blender now? [Y/n]: "
+
+if [ -t 0 ]; then
+    read -r -p "$PROMPT" USER_INPUT
+elif [ -c /dev/tty ]; then
+    read -r -p "$PROMPT" USER_INPUT </dev/tty
+else
+    USER_INPUT="n"
+fi
+
+if [[ -z "$USER_INPUT" || "$USER_INPUT" =~ ^[Yy]$ ]]; then
+    echo ""
+    if [ -c /dev/tty ]; then
+        "$INSTALL_DIR/brc" install-addon </dev/tty
+    else
+        "$INSTALL_DIR/brc" install-addon
+    fi
+else
+    echo ""
+    echo "You can run 'brc install-addon' anytime later to configure your Blender versions."
+fi
