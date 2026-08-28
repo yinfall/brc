@@ -96,10 +96,17 @@ blender-remote-console/
 │   ├── executor.py            # AST 代码解析器与执行器
 │   ├── operators.py           # Blender 算子（重置命名空间、复制等）
 │   └── ui.py                  # 3D Viewport N-Panel 界面
-├── cli/                       # Go 语言 CLI & Daemon 源码
+├── cli/                       # Go 语言 CLI & Daemon 源码 (基于 Cobra 框架)
 │   ├── go.mod                 # Go 模块声明
-│   ├── main.go                # CLI 与 Daemon 核心逻辑
-│   └── install_addon.go       # 插件安装/卸载/环境检测逻辑
+│   ├── main.go                # 极简入口，调用 cmd.Execute()
+│   └── cmd/                   # Cobra 核心命令实现
+│       ├── root.go            # 根命令与智能推断拦截器 (Heuristics)
+│       ├── exec.go            # 代码执行命令
+│       ├── daemon.go          # 后台守护进程
+│       ├── sessions.go        # 会话管理
+│       ├── install_addon.go   # 插件安装与卸载
+│       ├── shared.go          # 共享状态与工具函数
+│       └── *_test.go          # 单元测试文件
 ├── scripts/                   # 一键安装脚本 (install.ps1 / install.sh)
 ├── docs/                      # 开发者文档与设计架构
 ├── .github/workflows/         # CI/CD 自动构建与发布流水线
@@ -139,6 +146,16 @@ ln -s "/你的项目根目录/blender-addon" "$HOME/.config/blender/4.5/scripts/
 1. 编译本地 `cli/` 源码至 `~/.brc/bin/brc` 并配置 PATH；
 2. 将本地 `blender-addon/` 打包生成 `~/.brc/blender-remote-console.zip`；
 3. 调用 `brc install-addon` 弹出交互菜单让你选择安装到哪些 Blender 版本。
+
+### 5. 单元测试 (Testing)
+
+CLI 项目 (Go) 包含了自动化的单元测试，覆盖了文件系统逻辑与命令行智能推断规则。测试代码遵循 Go 规范，与其对应的源码处于同级目录中（例如 `cmd/root_test.go`）。
+
+**运行所有测试并查看代码覆盖率**：
+```bash
+cd cli
+go test -v -cover ./...
+```
 
 ---
 
