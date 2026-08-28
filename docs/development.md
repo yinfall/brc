@@ -6,7 +6,7 @@
 
 ## 🏛️ 整体架构设计
 
-Blender Remote Console 参照 `adb` (Android Debug Bridge) 的经典架构进行设计，由以下三个核心角色组成：
+Blender Remote Console 采用高效的 Client-Daemon 守护进程中继架构，由以下三个核心角色组成：
 
 ```mermaid
 flowchart TD

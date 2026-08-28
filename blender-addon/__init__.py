@@ -4,10 +4,12 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > Remote Console",
-    "description": "Execute Python code and script files in Blender remotely via HTTP curl commands.",
+    "description": "Execute Python code in Blender remotely from external CLI/terminal.",
     "warning": "",
-    "doc_url": "",
+    "doc_url": "https://github.com/yinfall/blender-remote-console",
+    "tracker_url": "https://github.com/yinfall/blender-remote-console/issues",
     "category": "Development",
+    "license": "GPL-3.0-or-later",
 }
 
 import bpy
