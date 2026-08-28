@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: windows
+            goarch: amd64
+            output: brc-windows-amd64.exe
+          - goos: linux
+            goarch: amd64
+            output: brc-linux-amd64
+          - goos: linux
+            goarch: arm64
+            output: brc-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            output: brc-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            output: brc-darwin-arm64
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build CLI Binary
+        run: |
+          cd cli
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o ../${{ matrix.output }} main.go
+
+      - name: Package Blender Addon
+        if: matrix.goos == 'windows' && matrix.goarch == 'amd64'
+        run: |
+          cd blender-addon
+          zip -r ../blender-remote-console.zip .
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: assets-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            ${{ matrix.output }}
+            blender-remote-console.zip
+          if-no-files-found: warn
+
+  publish-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -50,4 +50,6 @@ Thumbs.db
 
 # Binaries & Backups
 *.exe
+brc
+*.zip
 *~
