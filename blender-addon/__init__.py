@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Blender Remote Console",
     "author": "Antigravity",
-    "version": (1, 0, 0),
+    "version": (0, 0, 2),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > Remote Console",
     "description": "Execute Python code in Blender remotely from external CLI/terminal.",
