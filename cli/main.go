@@ -14,6 +14,7 @@ import (
 )
 
 const DaemonAddr = "127.0.0.1:8082"
+const Version = "v0.1.0"
 
 type Message struct {
 	Type      string `json:"type"`
@@ -46,6 +47,16 @@ func main() {
 
 	cmd := os.Args[1]
 	switch cmd {
+	case "install-addon", "setup":
+		runInstallAddon(os.Args[2:])
+	case "uninstall-addon":
+		runUninstallAddon(os.Args[2:])
+	case "doctor":
+		runDoctor()
+	case "version", "-v", "--version":
+		fmt.Printf("brc version %s\n", Version)
+	case "help", "-h", "--help":
+		printUsage()
 	case "daemon":
 		runDaemon()
 	case "sessions":
@@ -67,11 +78,24 @@ func main() {
 
 func printUsage() {
 	fmt.Println("Blender Remote Console CLI (brc)")
+	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  brc daemon                       Start background daemon")
-	fmt.Println("  brc sessions                     List attached Blender sessions")
-	fmt.Println("  brc exec <python_code>           Execute Python code")
-	fmt.Println("  brc -s <pid> exec <code|file>    Target specific session")
+	fmt.Println("  brc install-addon [--all] [--path <dir>]   Interactively select & install Blender addon")
+	fmt.Println("  brc doctor                                 Check system and addon installation status")
+	fmt.Println("  brc uninstall-addon [--all] [--path <dir>] Remove Blender addon from versions")
+	fmt.Println("  brc sessions                               List attached Blender sessions")
+	fmt.Println("  brc exec <python_code>                     Execute Python code in active Blender")
+	fmt.Println("  brc -s <pid> exec <code|file>              Target specific Blender session by PID")
+	fmt.Println("  brc daemon                                 Start background daemon server directly")
+	fmt.Println("  brc version                                Print brc version")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  brc install-addon")
+	fmt.Println("  brc install-addon --all")
+	fmt.Println("  brc doctor")
+	fmt.Println("  brc exec \"print(bpy.context.scene.name)\"")
+	fmt.Println("  brc exec script.py")
+	fmt.Println("  brc -s 12345 exec \"bpy.ops.mesh.primitive_cube_add()\"")
 }
 
 func ensureDaemon() {

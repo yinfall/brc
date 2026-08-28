@@ -98,7 +98,8 @@ blender-remote-console/
 │   └── ui.py                  # 3D Viewport N-Panel 界面
 ├── cli/                       # Go 语言 CLI & Daemon 源码
 │   ├── go.mod                 # Go 模块声明
-│   └── main.go                # CLI 与 Daemon 核心逻辑
+│   ├── main.go                # CLI 与 Daemon 核心逻辑
+│   └── install_addon.go       # 插件安装/卸载/环境检测逻辑
 ├── scripts/                   # 一键安装脚本 (install.ps1 / install.sh)
 ├── docs/                      # 开发者文档与设计架构
 ├── .github/workflows/         # CI/CD 自动构建与发布流水线
@@ -120,15 +121,24 @@ mklink /J "%APPDATA%\Blender Foundation\Blender\4.5\scripts\addons\blender-remot
 ln -s "/你的项目根目录/blender-addon" "$HOME/.config/blender/4.5/scripts/addons/blender-remote-console"
 ```
 
-### 4. 编译 Go CLI
+### 4. 本地源码一键构建与安装测试 (`~/.brc`)
 
-进入 `cli/` 目录直接编译：
-```bash
-cd cli
-go build -o brc.exe main.go  # Windows
-# 或
-go build -o brc main.go      # Linux / macOS
+如果你在本地修改了 CLI 或插件代码，想要模拟完整安装流程直接测试，可以运行：
+
+**Windows (PowerShell)**：
+```powershell
+.\scripts\build-and-install-from-source.ps1
 ```
+
+**Linux / macOS**：
+```bash
+./scripts/build-and-install-from-source.sh
+```
+
+该脚本会自动完成：
+1. 编译本地 `cli/` 源码至 `~/.brc/bin/brc` 并配置 PATH；
+2. 将本地 `blender-addon/` 打包生成 `~/.brc/blender-remote-console.zip`；
+3. 调用 `brc install-addon` 弹出交互菜单让你选择安装到哪些 Blender 版本。
 
 ---
 

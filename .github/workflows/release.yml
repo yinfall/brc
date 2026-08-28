@@ -42,7 +42,7 @@ jobs:
       - name: Build CLI Binary
         run: |
           cd cli
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o ../${{ matrix.output }} main.go
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s -w" -o ../${{ matrix.output }} .
 
       - name: Package Blender Addon
         if: matrix.goos == 'windows' && matrix.goarch == 'amd64'

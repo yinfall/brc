@@ -1,56 +1,50 @@
 #!/usr/bin/env bash
 set -e
 
-REPO="your-username/blender-remote-console"
-INSTALL_DIR="$HOME/.brc/bin"
-RELEASE_API="https://api.github.com/repos/$REPO/releases/latest"
+REPO="yinfall/blender-remote-console"
+BRC_HOME="$HOME/.brc"
+INSTALL_DIR="$BRC_HOME/bin"
 
-echo ">>> Fetching latest release info for $REPO..."
-TAG=$(curl -s "$RELEASE_API" | grep -Po '"tag_name": "\K.*?(?=")' || true)
-
-if [ -z "$TAG" ]; then
-    echo "Failed to fetch latest release. Please ensure releases are published on GitHub."
-    exit 1
-fi
-
+echo ">>> Detecting platform and architecture..."
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 case "$ARCH" in
-    x86_64) ARCH="amd64" ;;
+    x86_64|amd64) ARCH="amd64" ;;
     aarch64|arm64) ARCH="arm64" ;;
-    *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+    *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-mkdir -p "$INSTALL_DIR"
-EXE_URL="https://github.com/$REPO/releases/download/$TAG/brc-${OS}-${ARCH}"
+case "$OS" in
+    linux|darwin) ;;
+    *) echo "❌ Unsupported operating system: $OS"; exit 1 ;;
+esac
 
-echo ">>> Downloading brc CLI ($TAG)..."
+# Try to get latest tag name (using POSIX sed for macOS & Linux compatibility)
+echo ">>> Checking for latest release..."
+TAG=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' || true)
+
+if [ -n "$TAG" ]; then
+    echo "    Found latest version: $TAG"
+    EXE_URL="https://github.com/$REPO/releases/download/$TAG/brc-${OS}-${ARCH}"
+    ZIP_URL="https://github.com/$REPO/releases/download/$TAG/blender-remote-console.zip"
+else
+    # Fallback to direct latest release assets (bypasses GitHub API rate limits)
+    echo "    (Using latest release assets directly)"
+    EXE_URL="https://github.com/$REPO/releases/latest/download/brc-${OS}-${ARCH}"
+    ZIP_URL="https://github.com/$REPO/releases/latest/download/blender-remote-console.zip"
+fi
+
+mkdir -p "$INSTALL_DIR"
+
+echo ">>> Downloading brc CLI..."
 curl -fsSL "$EXE_URL" -o "$INSTALL_DIR/brc"
 chmod +x "$INSTALL_DIR/brc"
 
-# Download addon zip
-TEMP_ZIP="/tmp/blender-remote-console.zip"
-curl -fsSL "https://github.com/$REPO/releases/download/$TAG/blender-remote-console.zip" -o "$TEMP_ZIP"
+echo ">>> Downloading Blender addon package..."
+curl -fsSL "$ZIP_URL" -o "$BRC_HOME/blender-remote-console.zip"
 
-if [ "$OS" = "darwin" ]; then
-    BLENDER_BASE="$HOME/Library/Application Support/Blender"
-else
-    BLENDER_BASE="$HOME/.config/blender"
-fi
-
-if [ -d "$BLENDER_BASE" ]; then
-    for ver_dir in "$BLENDER_BASE"/*; do
-        if [ -d "$ver_dir" ] && [[ "$(basename "$ver_dir")" =~ ^[0-9]+\.[0-9]+ ]]; then
-            ADDON_DIR="$ver_dir/scripts/addons/blender-remote-console"
-            mkdir -p "$ADDON_DIR"
-            unzip -o -q "$TEMP_ZIP" -d "$ADDON_DIR"
-            echo "    Installed to Blender $(basename "$ver_dir")"
-        fi
-    done
-else
-    echo "    [Warning] Blender config folder not found at $BLENDER_BASE. Please manually extract the addon."
-fi
-rm -f "$TEMP_ZIP"
+echo ">>> Configuring Blender addon..."
+"$INSTALL_DIR/brc" install-addon --all
 
 echo ""
 echo "✓ Installation complete!"
