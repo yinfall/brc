@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-REPO="yinfall/blender-remote-console"
+REPO="yinfall/brc"
 BRC_HOME="$HOME/.brc"
 INSTALL_DIR="$BRC_HOME/bin"
 

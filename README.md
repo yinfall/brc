@@ -1,6 +1,6 @@
 # Blender Remote Console (`brc`)
 
-[![Release](https://img.shields.io/github/v/release/yinfall/blender-remote-console?color=blue)](https://github.com/yinfall/blender-remote-console/releases)
+[![Release](https://img.shields.io/github/v/release/yinfall/brc?color=blue)](https://github.com/yinfall/brc/releases)
 [![License: MIT](https://img.shields.io/badge/CLI_License-MIT-green.svg)](LICENSE)
 [![License: GPL v3](https://img.shields.io/badge/Addon_License-GPL_v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Blender](https://img.shields.io/badge/Blender-4.x%20%7C%205.x-orange.svg)](https://www.blender.org/)
@@ -14,12 +14,12 @@
 
 ### Windows (PowerShell)
 ```powershell
-irm https://raw.githubusercontent.com/yinfall/blender-remote-console/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/yinfall/brc/main/scripts/install.ps1 | iex
 ```
 
 ### Linux / macOS (Bash)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yinfall/blender-remote-console/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yinfall/brc/main/scripts/install.sh | bash
 ```
 
 > **First-time setup**: Run `brc install-addon` to configure your Blender, then enable **Blender Remote Console** in Blender's **Preferences -> Add-ons**.

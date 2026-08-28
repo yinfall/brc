@@ -5,7 +5,7 @@ try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13
 } catch {}
 
-$Repo = "yinfall/blender-remote-console"
+$Repo = "yinfall/brc"
 $BrcHome = "$HOME\.brc"
 $InstallDir = "$BrcHome\bin"
 $ReleaseApi = "https://api.github.com/repos/$Repo/releases/latest"

@@ -6,8 +6,8 @@ bl_info = {
     "location": "View3D > Sidebar > Remote Console",
     "description": "Execute Python code in Blender remotely from external CLI/terminal.",
     "warning": "",
-    "doc_url": "https://github.com/yinfall/blender-remote-console",
-    "tracker_url": "https://github.com/yinfall/blender-remote-console/issues",
+    "doc_url": "https://github.com/yinfall/brc",
+    "tracker_url": "https://github.com/yinfall/brc/issues",
     "category": "Development",
     "license": "GPL-3.0-or-later",
 }
