@@ -81,7 +81,7 @@ class REMOTE_CONSOLE_OT_copy_brc_cmd(bpy.types.Operator):
     bl_description = "Copy a ready-to-use brc command to your OS clipboard"
     bl_options = {'REGISTER'}
 
-    cmd_type: str = bpy.props.EnumProperty(  # type: ignore
+    cmd_type: bpy.props.EnumProperty(
         name="Type",
         items=[
             ('SHORT', "Short Command", "Simple one-line command example"),
