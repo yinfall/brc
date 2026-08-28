@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Execute() {
+func prepareArgs(args []string) []string {
 	// Dynamically collect known commands
 	knownCommands := make(map[string]bool)
 	for _, cmd := range rootCmd.Commands() {
@@ -39,16 +39,16 @@ func Execute() {
 	knownCommands["completion"] = true
 
 	hasKnownCmd := false
-	for _, arg := range os.Args[1:] {
+	for _, arg := range args[1:] {
 		if knownCommands[arg] {
 			hasKnownCmd = true
 			break
 		}
 	}
 
-	if !hasKnownCmd && len(os.Args) > 1 {
+	if !hasKnownCmd && len(args) > 1 {
 		shouldInjectExec := false
-		for _, arg := range os.Args[1:] {
+		for _, arg := range args[1:] {
 			if strings.HasPrefix(arg, "-") {
 				continue
 			}
@@ -71,10 +71,15 @@ func Execute() {
 		}
 
 		if shouldInjectExec {
-			// Inject "exec" at the first position after "brc"
-			os.Args = append([]string{os.Args[0], "exec"}, os.Args[1:]...)
+			// Inject "exec" at the first position after the binary name
+			return append([]string{args[0], "exec"}, args[1:]...)
 		}
 	}
+	return args
+}
+
+func Execute() {
+	os.Args = prepareArgs(os.Args)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
