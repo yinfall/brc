@@ -1,9 +1,9 @@
-package main
+package cmd
 
 import (
 	"archive/zip"
 	"bufio"
-	"flag"
+	"github.com/spf13/cobra"
 	"fmt"
 	"io"
 	"net"
@@ -180,37 +180,27 @@ func extractZipFile(zipPath string, destAddonsDir string) (string, error) {
 	return targetAddonDir, nil
 }
 
-func runInstallAddon(args []string) {
-	fs := flag.NewFlagSet("install-addon", flag.ExitOnError)
-	customPath := fs.String("path", "", "Custom Blender scripts/addons directory to install into")
-	customZip := fs.String("zip", "", "Path to blender-remote-console.zip file")
-	allVersions := fs.Bool("all", false, "Install to all detected Blender versions non-interactively")
-	yesFlag := fs.Bool("y", false, "Alias for --all")
-	fs.Parse(args)
+func runInstallAddon(customPath string, customZip string, allVersions bool) error {
 
 	fmt.Println(">>> Blender Remote Console Addon Installation")
 	fmt.Println()
 
 	// 1. Locate the local zip file
-	zipPath, err := findLocalZip(*customZip)
+	zipPath, err := findLocalZip(customZip)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
-		fmt.Println("👉 Please ensure 'blender-remote-console.zip' is placed in ~/.brc/ or use:")
-		fmt.Println("   brc install-addon --zip /path/to/blender-remote-console.zip")
-		os.Exit(1)
+		return fmt.Errorf("❌ Error: %v\n👉 Please ensure 'blender-remote-console.zip' is placed in ~/.brc/ or use:\n   brc install-addon --zip /path/to/blender-remote-console.zip", err)
 	}
 	fmt.Printf("✓ Found addon package: %s\n\n", zipPath)
 
 	// 2. Custom path mode
-	if *customPath != "" {
-		installedDir, err := extractZipFile(zipPath, *customPath)
+	if customPath != "" {
+		installedDir, err := extractZipFile(zipPath, customPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Failed to install to %s: %v\n", *customPath, err)
-			os.Exit(1)
+			return fmt.Errorf("❌ Failed to install to %s: %v", customPath, err)
 		}
 		fmt.Printf("✓ Successfully installed addon to: %s\n", installedDir)
 		printNextSteps()
-		return
+		return nil
 	}
 
 	// 3. Scan detected installations
@@ -219,13 +209,13 @@ func runInstallAddon(args []string) {
 		fmt.Println("⚠️  No standard Blender installation directories detected automatically.")
 		fmt.Println("   You can specify your Blender addons directory manually using:")
 		fmt.Println("   brc install-addon --path \"<path_to_blender>/scripts/addons\"")
-		return
+		return nil
 	}
 
 	// 4. Select target versions
 	var selectedTargets []BlenderTarget
 
-	if *allVersions || *yesFlag {
+	if allVersions {
 		selectedTargets = targets
 	} else {
 		fmt.Println("Detected Blender installations:")
@@ -251,7 +241,7 @@ func runInstallAddon(args []string) {
 			input = strings.TrimSpace(input)
 			if strings.EqualFold(input, "q") || strings.EqualFold(input, "quit") || strings.EqualFold(input, "exit") {
 				fmt.Println("Installation cancelled.")
-				return
+				return nil
 			}
 			if input == "" || strings.EqualFold(input, "a") || strings.EqualFold(input, "all") {
 				selectedTargets = targets
@@ -261,8 +251,7 @@ func runInstallAddon(args []string) {
 				for _, tok := range tokens {
 					idx, err := strconv.Atoi(tok)
 					if err != nil || idx < 1 || idx > len(targets) {
-						fmt.Fprintf(os.Stderr, "❌ Invalid selection '%s'. Please specify numbers between 1 and %d.\n", tok, len(targets))
-						os.Exit(1)
+						return fmt.Errorf("❌ Invalid selection '%s'. Please specify numbers between 1 and %d.", tok, len(targets))
 					}
 					if !seen[idx] {
 						seen[idx] = true
@@ -275,7 +264,7 @@ func runInstallAddon(args []string) {
 
 	if len(selectedTargets) == 0 {
 		fmt.Println("No targets selected.")
-		return
+		return nil
 	}
 
 	// 5. Extract to selected targets
@@ -294,6 +283,7 @@ func runInstallAddon(args []string) {
 	if successCount > 0 {
 		printNextSteps()
 	}
+	return nil
 }
 
 func printNextSteps() {
@@ -305,17 +295,12 @@ func printNextSteps() {
 	fmt.Println("   4. Press 'N' in 3D Viewport to find the 'Remote Console' tab")
 }
 
-func runUninstallAddon(args []string) {
-	fs := flag.NewFlagSet("uninstall-addon", flag.ExitOnError)
-	customPath := fs.String("path", "", "Custom Blender scripts/addons directory to uninstall from")
-	allVersions := fs.Bool("all", false, "Uninstall from all detected Blender versions non-interactively")
-	yesFlag := fs.Bool("y", false, "Alias for --all")
-	fs.Parse(args)
+func runUninstallAddon(customPath string, allVersions bool) error {
 
 	fmt.Println(">>> Removing Blender Remote Console Addon...")
 
-	if *customPath != "" {
-		targetAddonDir := filepath.Join(*customPath, AddonFolderName)
+	if customPath != "" {
+		targetAddonDir := filepath.Join(customPath, AddonFolderName)
 		if _, err := os.Stat(targetAddonDir); err == nil {
 			if err := os.RemoveAll(targetAddonDir); err != nil {
 				fmt.Printf("❌ Failed to remove %s: %v\n", targetAddonDir, err)
@@ -323,19 +308,19 @@ func runUninstallAddon(args []string) {
 				fmt.Printf("✓ Removed: %s\n", targetAddonDir)
 			}
 		} else {
-			fmt.Printf("  (Not installed in %s)\n", *customPath)
+			fmt.Printf("  (Not installed in %s)\n", customPath)
 		}
-		return
+		return nil
 	}
 
 	targets := detectBlenderTargets()
 	if len(targets) == 0 {
 		fmt.Println("No Blender installations found.")
-		return
+		return nil
 	}
 
 	var selectedTargets []BlenderTarget
-	if *allVersions || *yesFlag {
+	if allVersions {
 		selectedTargets = targets
 	} else {
 		fmt.Println("Installed Blender versions:")
@@ -360,7 +345,7 @@ func runUninstallAddon(args []string) {
 			input = strings.TrimSpace(input)
 			if strings.EqualFold(input, "q") || strings.EqualFold(input, "quit") || strings.EqualFold(input, "exit") {
 				fmt.Println("Uninstallation cancelled.")
-				return
+				return nil
 			}
 			if input == "" || strings.EqualFold(input, "a") || strings.EqualFold(input, "all") {
 				selectedTargets = targets
@@ -370,8 +355,7 @@ func runUninstallAddon(args []string) {
 				for _, tok := range tokens {
 					idx, err := strconv.Atoi(tok)
 					if err != nil || idx < 1 || idx > len(targets) {
-						fmt.Fprintf(os.Stderr, "❌ Invalid selection '%s'. Please specify numbers between 1 and %d.\n", tok, len(targets))
-						os.Exit(1)
+						return fmt.Errorf("❌ Invalid selection '%s'. Please specify numbers between 1 and %d.", tok, len(targets))
 					}
 					if !seen[idx] {
 						seen[idx] = true
@@ -395,9 +379,10 @@ func runUninstallAddon(args []string) {
 		}
 	}
 	fmt.Println("✓ Uninstallation complete.")
+	return nil
 }
 
-func runDoctor() {
+func runDoctor() error {
 	fmt.Println("=== Blender Remote Console Doctor ===")
 	fmt.Println()
 
@@ -444,4 +429,47 @@ func runDoctor() {
 
 	fmt.Println()
 	fmt.Println("Run 'brc install-addon' to install the addon.")
+	return nil
+}
+
+var installCmd = &cobra.Command{
+	Use:   "install-addon",
+	Short: "Interactively select & install Blender addon",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		customPath, _ := cmd.Flags().GetString("path")
+		customZip, _ := cmd.Flags().GetString("zip")
+		allVersions, _ := cmd.Flags().GetBool("all")
+		return runInstallAddon(customPath, customZip, allVersions)
+	},
+}
+
+var uninstallCmd = &cobra.Command{
+	Use:   "uninstall-addon",
+	Short: "Remove Blender addon from versions",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		customPath, _ := cmd.Flags().GetString("path")
+		allVersions, _ := cmd.Flags().GetBool("all")
+		return runUninstallAddon(customPath, allVersions)
+	},
+}
+
+var doctorCmd = &cobra.Command{
+	Use:   "doctor",
+	Short: "Check system and addon installation status",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runDoctor()
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(installCmd)
+	rootCmd.AddCommand(uninstallCmd)
+	rootCmd.AddCommand(doctorCmd)
+	
+	// Add flags so they show up in help, even if runInstallAddon parses them via FlagSet
+	installCmd.Flags().BoolP("all", "y", false, "Install to all detected Blender versions")
+	installCmd.Flags().String("path", "", "Custom path")
+	installCmd.Flags().String("zip", "", "Path to zip")
+	uninstallCmd.Flags().BoolP("all", "y", false, "Uninstall from all detected Blender versions")
+	uninstallCmd.Flags().String("path", "", "Custom path")
 }
