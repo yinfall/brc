@@ -41,7 +41,7 @@ class DaemonClient:
             self.failed_requests += 1
             self.last_status = "ERROR"
 
-    def start(self) -> tuple[bool, str]:
+    def start(self) -> tuple:
         if self.is_running:
             return True, f"Client is already running."
 
@@ -112,7 +112,7 @@ class DaemonClient:
                 self.sock = None
             return False, f"Failed to initialize connection: {str(e)}"
 
-    def stop(self) -> tuple[bool, str]:
+    def stop(self) -> tuple:
         if not self.is_running:
             return True, "Client is not running."
             

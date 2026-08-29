@@ -29,7 +29,7 @@ type BlenderTarget struct {
 	AddonDir    string
 }
 
-// detectBlenderTargets finds all standard Blender 4.x+ addon directories on the current system
+// detectBlenderTargets finds all standard Blender 2.80+ addon directories on the current system
 func detectBlenderTargets() []BlenderTarget {
 	var results []BlenderTarget
 	var baseDirs []string
@@ -69,8 +69,8 @@ func detectBlenderTargets() []BlenderTarget {
 				if len(matches) == 3 {
 					major, _ := strconv.Atoi(matches[1])
 					minor, _ := strconv.Atoi(matches[2])
-					// Support Blender 4.0+
-					if major >= 4 {
+					// Support Blender 2.80+
+					if major >= 3 || (major == 2 && minor >= 80) {
 						addonDir := filepath.Join(base, entry.Name(), "scripts", "addons")
 						results = append(results, BlenderTarget{
 							VersionName: fmt.Sprintf("Blender %s", entry.Name()),

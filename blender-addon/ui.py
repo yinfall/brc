@@ -1,6 +1,20 @@
 import bpy
 import os
 from .client import client_manager
+import bpy.types
+
+_icon_cache = {}
+def get_icon(icon_name, fallback='NONE'):
+    if icon_name in _icon_cache:
+        return _icon_cache[icon_name]
+    try:
+        if icon_name in bpy.types.UILayout.bl_rna.functions["label"].parameters["icon"].enum_items:
+            _icon_cache[icon_name] = icon_name
+        else:
+            _icon_cache[icon_name] = fallback
+    except Exception:
+        _icon_cache[icon_name] = fallback
+    return _icon_cache[icon_name]
 
 
 class REMOTE_CONSOLE_UL_log_list(bpy.types.UIList):
@@ -63,7 +77,7 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
             box = layout.box()
             row = box.row(align=True)
             if is_running:
-                row.label(text=f"Connected (PID: {pid})", icon='CHECKMARK')
+                row.label(text=f"Connected (PID: {pid})", icon=get_icon('CHECKMARK', 'FILE_TICK'))
                 row.operator("wm.remote_console_stop_client", text="Disconnect", icon='CANCEL')
             else:
                 row.label(text="Status: Disconnected", icon='PAUSE')
@@ -78,10 +92,10 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
             usage_box.label(text="brc Quick Commands", icon='CONSOLE')
 
             row1 = usage_box.row(align=True)
-            op1 = row1.operator("wm.remote_console_copy_brc_cmd", text="Copy Short Cmd", icon='COPYDOWN')
+            op1 = row1.operator("wm.remote_console_copy_brc_cmd", text="Copy Short Cmd", icon=get_icon('COPYDOWN', 'NONE'))
             op1.cmd_type = 'SHORT'
 
-            op2 = row1.operator("wm.remote_console_copy_brc_cmd", text="Copy Script Cmd", icon='COPYDOWN')
+            op2 = row1.operator("wm.remote_console_copy_brc_cmd", text="Copy Script Cmd", icon=get_icon('COPYDOWN', 'NONE'))
             op2.cmd_type = 'FILE'
 
             col_hint = usage_box.column(align=True)
@@ -97,8 +111,8 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
             
             row_stats_hdr = stats_box.row(align=True)
             row_stats_hdr.label(text="Runtime Terminal", icon='CONSOLE')
-            row_stats_hdr.operator("wm.remote_console_copy_logs", text="", icon='COPYDOWN')
-            row_stats_hdr.operator("wm.remote_console_clear_logs", text="", icon='TRASH')
+            row_stats_hdr.operator("wm.remote_console_copy_logs", text="", icon=get_icon('COPYDOWN', 'NONE'))
+            row_stats_hdr.operator("wm.remote_console_clear_logs", text="", icon=get_icon('TRASH', 'X'))
 
             row_info = stats_box.row(align=True)
             row_info.scale_y = 0.85
