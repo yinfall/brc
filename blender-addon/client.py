@@ -48,9 +48,16 @@ class DaemonClient:
         import shutil
         import subprocess
 
-        brc_path = shutil.which("brc") or shutil.which("brc.exe")
+        # Look in PATH, default installation directory ~/.brc/bin, or standard paths
+        candidates = [
+            shutil.which("brc"),
+            shutil.which("brc.exe"),
+            os.path.expanduser("~/.brc/bin/brc"),
+            os.path.expanduser("~/.brc/bin/brc.exe"),
+        ]
+        brc_path = next((p for p in candidates if p and os.path.isfile(p)), None)
         if not brc_path:
-            return False, "brc executable not found in system PATH"
+            return False, "brc executable not found in system PATH or ~/.brc/bin"
 
         self.host = "127.0.0.1"
         self.port = 8082
