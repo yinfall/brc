@@ -10,7 +10,7 @@ import (
 )
 
 const DaemonAddr = "127.0.0.1:8082"
-const Version = "v0.0.3"
+const Version = "v0.0.4"
 
 type Message struct {
 	Type      string `json:"type"`
