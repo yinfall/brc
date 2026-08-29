@@ -37,11 +37,20 @@ fi
 mkdir -p "$INSTALL_DIR"
 
 echo ">>> Downloading brc CLI..."
-curl -fsSL "$EXE_URL" -o "$INSTALL_DIR/brc"
-chmod +x "$INSTALL_DIR/brc"
+curl -fsSL "$EXE_URL" -o "$INSTALL_DIR/brc.tmp"
+chmod +x "$INSTALL_DIR/brc.tmp"
+
+# On macOS, clear quarantine and re-apply local ad-hoc signature to prevent SIGKILL on Apple Silicon
+if [ "$OS" = "darwin" ]; then
+    xattr -c "$INSTALL_DIR/brc.tmp" 2>/dev/null || true
+    codesign --force --deep --sign - "$INSTALL_DIR/brc.tmp" 2>/dev/null || true
+fi
+
+mv -f "$INSTALL_DIR/brc.tmp" "$INSTALL_DIR/brc"
 
 echo ">>> Downloading Blender addon package..."
-curl -fsSL "$ZIP_URL" -o "$BRC_HOME/blender-remote-console.zip"
+curl -fsSL "$ZIP_URL" -o "$BRC_HOME/blender-remote-console.zip.tmp"
+mv -f "$BRC_HOME/blender-remote-console.zip.tmp" "$BRC_HOME/blender-remote-console.zip"
 
 echo ""
 echo "🎉 brc CLI installed successfully to $INSTALL_DIR/brc"

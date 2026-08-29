@@ -36,12 +36,17 @@ if (-not (Test-Path $InstallDir)) {
 $ExeTarget = Join-Path $InstallDir "brc.exe"
 $ZipTarget = Join-Path $BrcHome "blender-remote-console.zip"
 
-# 2. Download files
+# 2. Download files (using temp files for atomic replacement)
+$ExeTemp = "$ExeTarget.tmp"
+$ZipTemp = "$ZipTarget.tmp"
+
 Write-Host ">>> Downloading brc.exe..." -ForegroundColor Cyan
-Invoke-WebRequest -Uri $ExeUrl -OutFile $ExeTarget -UseBasicParsing
+Invoke-WebRequest -Uri $ExeUrl -OutFile $ExeTemp -UseBasicParsing
+Move-Item -Path $ExeTemp -Destination $ExeTarget -Force
 
 Write-Host ">>> Downloading Blender addon package..." -ForegroundColor Cyan
-Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipTarget -UseBasicParsing
+Invoke-WebRequest -Uri $ZipUrl -OutFile $ZipTemp -UseBasicParsing
+Move-Item -Path $ZipTemp -Destination $ZipTarget -Force
 
 # 3. Append ~/.brc/bin to User PATH if not present
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
