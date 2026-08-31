@@ -3,7 +3,7 @@ import os
 from .client import client_manager
 import bpy.types
 
-UI_ADDON_VERSION = "v0.0.4"
+UI_ADDON_VERSION = "v0.1.0-alpha.1"  # Update this version string when releasing new versions
 
 _icon_cache = {}
 def get_icon(icon_name, fallback='NONE'):
