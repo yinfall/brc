@@ -47,6 +47,7 @@ func ensureDaemon() error {
 		return fmt.Errorf("error getting executable path: %w", err)
 	}
 
+	fmt.Fprintf(os.Stderr, "* daemon not running; starting now at %s\n", DaemonAddr)
 	c := exec.Command(exe, "daemon")
 	c.SysProcAttr = nil
 	err = c.Start()
@@ -63,6 +64,7 @@ func ensureDaemon() error {
 		conn, err := net.DialTimeout("tcp", DaemonAddr, 50*time.Millisecond)
 		if err == nil {
 			conn.Close()
+			fmt.Fprintln(os.Stderr, "* daemon started successfully")
 			return nil
 		}
 	}

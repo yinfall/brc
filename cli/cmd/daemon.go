@@ -134,37 +134,45 @@ func handleListSessions(conn net.Conn) {
 func handleCliExec(conn net.Conn, firstMsg Message) {
 	defer conn.Close()
 	targetPid := firstMsg.PID
-	sessionsMu.Lock()
-
 	var session *Session
-	if targetPid > 0 {
-		session = sessions[targetPid]
-	} else if len(sessions) == 1 {
-		for _, s := range sessions {
-			session = s
+	
+	// Wait up to 2.5s for a session to register, in case daemon just started
+	for i := 0; i < 25; i++ {
+		sessionsMu.Lock()
+		if targetPid > 0 {
+			session = sessions[targetPid]
+		} else if len(sessions) == 1 {
+			for _, s := range sessions {
+				session = s
+			}
+		} else if len(sessions) > 1 {
+			sessionsMu.Unlock()
+			json.NewEncoder(conn).Encode(Message{
+				Success: false,
+				Stderr:  "Error: more than one Blender session active. Use -s <pid>.\n",
+			})
+			return
 		}
-	} else if len(sessions) > 1 {
 		sessionsMu.Unlock()
-		json.NewEncoder(conn).Encode(Message{
-			Success: false,
-			Stderr:  "Error: more than one Blender session active. Use -s <pid>.\n",
-		})
-		return
-	} else {
-		sessionsMu.Unlock()
-		json.NewEncoder(conn).Encode(Message{
-			Success: false,
-			Stderr:  "Error: no Blender sessions found.\n",
-		})
-		return
+
+		if session != nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
-	sessionsMu.Unlock()
 
 	if session == nil {
-		json.NewEncoder(conn).Encode(Message{
-			Success: false,
-			Stderr:  fmt.Sprintf("Error: session %d not found.\n", targetPid),
-		})
+		if targetPid > 0 {
+			json.NewEncoder(conn).Encode(Message{
+				Success: false,
+				Stderr:  fmt.Sprintf("Error: session %d not found.\n", targetPid),
+			})
+		} else {
+			json.NewEncoder(conn).Encode(Message{
+				Success: false,
+				Stderr:  "Error: no Blender sessions found.\n",
+			})
+		}
 		return
 	}
 

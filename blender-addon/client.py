@@ -68,7 +68,7 @@ class DaemonClient:
             self.sock.settimeout(0.5)
             self.sock.connect((self.host, self.port))
             connected = True
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, socket.timeout, TimeoutError, OSError):
             pass
         except Exception as e:
             return False, f"Socket error: {str(e)}"
