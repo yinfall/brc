@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-const DaemonAddr = "127.0.0.1:8082"
+var DaemonAddr = "127.0.0.1:8082"
 const Version = "v0.0.4"
 
 type Message struct {
