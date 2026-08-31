@@ -3,6 +3,8 @@ import os
 from .client import client_manager
 import bpy.types
 
+UI_ADDON_VERSION = "v0.0.4"
+
 _icon_cache = {}
 def get_icon(icon_name, fallback='NONE'):
     if icon_name in _icon_cache:
@@ -75,6 +77,11 @@ class REMOTE_CONSOLE_PT_main(bpy.types.Panel):
 
             # --- Status Box ---
             box = layout.box()
+            
+            # Show Addon Version
+            v_row = box.row()
+            v_row.label(text=f"Version: {UI_ADDON_VERSION}", icon='INFO')
+            
             row = box.row(align=True)
             if is_running:
                 row.label(text=f"Connected (PID: {pid})", icon=get_icon('CHECKMARK', 'FILE_TICK'))
