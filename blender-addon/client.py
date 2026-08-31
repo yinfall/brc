@@ -16,6 +16,7 @@ class DaemonClient:
         self.is_running = False
         self.sock = None
         self.thread = None
+        self.last_spawn_time = 0
 
         # Stats
         self.total_requests = 0
@@ -74,6 +75,11 @@ class DaemonClient:
             return False, f"Socket error: {str(e)}"
 
         if not connected:
+            current_time = time.time()
+            if current_time - self.last_spawn_time < 10.0:
+                return False, "Waiting for daemon (cooldown)..."
+            
+            self.last_spawn_time = current_time
             try:
                 subprocess.Popen([brc_path, "daemon"], 
                                  stdout=subprocess.DEVNULL, 
